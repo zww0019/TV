@@ -12,16 +12,19 @@ import com.fongmi.android.tv.api.ApiConfig;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Vod;
+import com.fongmi.android.tv.gson.FilterAdapter;
 import com.fongmi.android.tv.net.OkHttp;
 import com.fongmi.android.tv.utils.Utils;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.crawler.SpiderDebug;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,7 +67,8 @@ public class SiteViewModel extends ViewModel {
                 String body = OkHttp.newCall(site.getApi()).execute().body().string();
                 SpiderDebug.log(body);
                 Result result = site.getType() == 0 ? Result.fromXml(body) : Result.fromJson(body);
-                if (result.getList().isEmpty() || result.getList().get(0).getVodPic().length() > 0) return result;
+                if (result.getList().isEmpty() || result.getList().get(0).getVodPic().length() > 0)
+                    return result;
                 ArrayList<String> ids = new ArrayList<>();
                 for (Vod item : result.getList()) ids.add(item.getVodId());
                 ArrayMap<String, String> params = new ArrayMap<>();
@@ -89,8 +93,10 @@ public class SiteViewModel extends ViewModel {
                 return Result.fromJson(categoryContent);
             } else {
                 ArrayMap<String, String> params = new ArrayMap<>();
-                if (site.getType() == 1 && !extend.isEmpty()) params.put("f", new Gson().toJson(extend));
-                else if (site.getType() == 4) params.put("ext", Utils.getBase64(new Gson().toJson(extend)));
+                if (site.getType() == 1 && !extend.isEmpty())
+                    params.put("f", new Gson().toJson(extend));
+                else if (site.getType() == 4)
+                    params.put("ext", Utils.getBase64(new Gson().toJson(extend)));
                 params.put("ac", site.getType() == 0 ? "videolist" : "detail");
                 params.put("t", tid);
                 params.put("pg", page);
@@ -149,7 +155,8 @@ public class SiteViewModel extends ViewModel {
             } else {
                 String url = id;
                 String type = Uri.parse(url).getQueryParameter("type");
-                if (type != null && type.equals("json")) url = Result.fromJson(OkHttp.newCall(id).execute().body().string()).getUrl();
+                if (type != null && type.equals("json"))
+                    url = Result.fromJson(OkHttp.newCall(id).execute().body().string()).getUrl();
                 Result result = new Result();
                 result.setUrl(url);
                 result.setFlag(flag);
@@ -170,7 +177,18 @@ public class SiteViewModel extends ViewModel {
             ArrayMap<String, String> params = new ArrayMap<>();
             params.put("wd", keyword);
             if (site.getType() != 0) params.put("ac", "detail");
+            // 部分网站参数传入ac后无法按照关键字搜索
             String body = OkHttp.newCall(site.getApi(), params).execute().body().string();
+            Result tempResult;
+            if(site.getType()==0){
+                tempResult = Result.fromXml(body);
+            }else{
+                tempResult = Result.fromJson(body);
+            }
+            if (!tempResult.getList().isEmpty() && !tempResult.getList().get(0).getVodName().contains(keyword)) {
+                params.remove("ac");
+                body = OkHttp.newCall(site.getApi(), params).execute().body().string();
+            }
             SpiderDebug.log(site.getName() + "," + body);
             if (site.getType() == 0) post(site, Result.fromXml(body));
             else post(site, Result.fromJson(body));
@@ -188,7 +206,8 @@ public class SiteViewModel extends ViewModel {
         executor = Executors.newFixedThreadPool(2);
         executor.execute(() -> {
             try {
-                if (!Thread.interrupted()) result.postValue(executor.submit(callable).get(Constant.TIMEOUT_VOD, TimeUnit.MILLISECONDS));
+                if (!Thread.interrupted())
+                    result.postValue(executor.submit(callable).get(Constant.TIMEOUT_VOD, TimeUnit.MILLISECONDS));
             } catch (Throwable e) {
                 e.printStackTrace();
                 if (e instanceof InterruptedException) return;

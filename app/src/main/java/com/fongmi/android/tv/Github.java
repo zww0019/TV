@@ -14,7 +14,7 @@ public class Github {
     public static final String B = "https://gh-proxy.com/";
     public static final String C = "https://ghproxy.com/";
     public static final String D = "https://raw.iqiq.io/";
-    public static final String REPO = "FongMi/TV/";
+    public static final String REPO = "zww0019/TV/";
     public static final String RELEASE = "release";
     public static final String DEV = "dev";
 
