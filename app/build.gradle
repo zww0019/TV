@@ -16,13 +16,13 @@ android {
     productFlavors {
         leanback {
             dimension "mode"
-            versionCode 67
-            versionName "1.6.6.1"
+            versionCode 68
+            versionName "1.6.6.2"
         }
         mobile {
             dimension "mode"
             versionCode 3
-            versionName "1.0.3"
+            versionName "20230223#1"
         }
         java {
             dimension = "api"
@@ -64,7 +64,7 @@ dependencies {
     implementation project(':catvod')
     implementation project(':forcetech')
     implementation project(':ijkplayer')
-//    pythonImplementation project(':pyramid')
+    //pythonImplementation project(':pyramid')
     implementation 'androidx.appcompat:appcompat:1.6.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1'
     implementation 'androidx.lifecycle:lifecycle-viewmodel:2.5.1'
