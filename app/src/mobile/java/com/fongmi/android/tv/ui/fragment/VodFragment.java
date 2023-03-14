@@ -21,15 +21,14 @@ import com.fongmi.android.tv.databinding.FragmentVodBinding;
 import com.fongmi.android.tv.event.RefreshEvent;
 import com.fongmi.android.tv.impl.FilterCallback;
 import com.fongmi.android.tv.impl.SiteCallback;
-import com.fongmi.android.tv.ui.activity.BaseFragment;
 import com.fongmi.android.tv.ui.activity.CollectActivity;
 import com.fongmi.android.tv.ui.adapter.TypeAdapter;
+import com.fongmi.android.tv.ui.base.BaseFragment;
 import com.fongmi.android.tv.ui.custom.dialog.FilterDialog;
 import com.fongmi.android.tv.ui.custom.dialog.LinkDialog;
 import com.fongmi.android.tv.ui.custom.dialog.SiteDialog;
 import com.fongmi.android.tv.ui.fragment.child.HomeFragment;
 import com.fongmi.android.tv.ui.fragment.child.TypeFragment;
-import com.fongmi.android.tv.utils.Utils;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import org.greenrobot.eventbus.EventBus;
@@ -76,9 +75,9 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
         mBinding.pager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
-                setFabVisible(mAdapter.get(mBinding.pager.getCurrentItem()).getFilters().size() > 0);
                 mBinding.type.smoothScrollToPosition(position);
                 mAdapter.setActivated(position);
+                setFabVisible(position);
             }
         });
     }
@@ -89,18 +88,21 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
         mBinding.type.setAdapter(mAdapter = new TypeAdapter(this));
     }
 
-    private void setFabVisible(boolean filter) {
-        if (filter) {
+    private void setFabVisible(int position) {
+        if (position == 0) {
+            mBinding.filter.hide();
+            mBinding.link.show();
+        } else if (mAdapter.get(position).getFilters().size() > 0) {
             mBinding.filter.show();
             mBinding.link.hide();
         } else {
             mBinding.filter.hide();
-            mBinding.link.show();
+            mBinding.link.hide();
         }
     }
 
     private void onTitle(View view) {
-        SiteDialog.create(this).show();
+        SiteDialog.create(this).change().show();
     }
 
     private void onLink(View view) {
@@ -128,6 +130,7 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
     }
 
     private void homeContent() {
+        setFabVisible(0);
         mAdapter.clear();
         mBinding.pager.setAdapter(new PageAdapter(getChildFragmentManager()));
         mBinding.title.setText(getSite().getName().isEmpty() ? getString(R.string.app_name) : getSite().getName());
@@ -146,6 +149,10 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
     }
 
     @Override
+    public void onChanged() {
+    }
+
+    @Override
     public void onItemClick(int position, Class item) {
         mBinding.pager.setCurrentItem(position);
         mAdapter.setActivated(position);
@@ -156,16 +163,9 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
         ((TypeFragment) getFragment()).setFilter(key, value);
     }
 
-    public void toggleLink(int dy) {
-        Utils.toggleFab(dy, mBinding.link);
-    }
-
-    public void toggleFilter(int dy) {
-        Utils.toggleFab(dy, mBinding.filter);
-    }
-
     public void setAdapter(Result result) {
         try {
+            if (mAdapter.hasType()) return;
             result.setTypes(getTypes(result));
             mAdapter.addAll(result.getTypes());
             for (Class item : mAdapter.getTypes()) if (result.getFilters().containsKey(item.getTypeId())) item.setFilters(result.getFilters().get(item.getTypeId()));
@@ -190,7 +190,7 @@ public class VodFragment extends BaseFragment implements SiteCallback, FilterCal
     class PageAdapter extends FragmentStatePagerAdapter {
 
         public PageAdapter(@NonNull FragmentManager fm) {
-            super(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+            super(fm);
         }
 
         @NonNull
